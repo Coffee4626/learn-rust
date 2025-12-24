@@ -7,32 +7,27 @@ pub struct RC4 {
 impl RC4 {
     pub fn new(key: &[u8]) -> Self {
         let mut s = [0u8; 256];
-        let mut i = 0usize;
-        while i < 256 {
+
+        for i in 0..256 {
             s[i] = i as u8;
-            i += 1;
         }
 
         let mut j: u8 = 0;
-        let mut i2 = 0usize;
-        while i2 < 256 {
-            j = j.wrapping_add(s[i2]).wrapping_add(key[i2 % key.len()]) & 0xff;
-            s.swap(i2, j as usize);
-            i2 += 1;
+        for i in 0..256 {
+            //wrapping_add to automatically mod by range of the variable, in this case u8 is 256
+            j = j.wrapping_add(s[i]).wrapping_add(key[i % key.len()]);
+            s.swap(i, j as usize);
         }
         RC4 { s, i: 0, j: 0 }
     }
 
     pub fn apply(&mut self, data: &mut [u8]) {
-        let mut k = 0usize;
-        while k < data.len() {
-            self.i = self.i.wrapping_add(1) & 0xff;
+        for byte in data.iter_mut() {
+            self.i = self.i.wrapping_add(1);
             self.j = self.j.wrapping_add(self.s[self.i as usize]);
             self.s.swap(self.i as usize, self.j as usize);
             let idx = self.s[self.i as usize].wrapping_add(self.s[self.j as usize]) as usize;
-            let keystream = self.s[idx];
-            data[k] ^= keystream;
-            k += 1;
+            *byte ^= self.s[idx];
         }
     }
 }
